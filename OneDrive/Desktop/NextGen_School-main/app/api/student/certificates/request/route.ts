@@ -72,6 +72,6 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error("Certificate request error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Internal server error" }, { status: 500 })
   }
 }

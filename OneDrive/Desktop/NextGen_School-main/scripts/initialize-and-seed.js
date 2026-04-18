@@ -85,6 +85,7 @@ try {
         title TEXT NOT NULL,
         time_limit INTEGER DEFAULT 30,
         passing_score INTEGER DEFAULT 70,
+        max_attempts INTEGER DEFAULT 3,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -152,6 +153,7 @@ try {
         course_id INTEGER REFERENCES courses(id) ON DELETE CASCADE,
         issued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         certificate_url TEXT,
+        certificate_number TEXT UNIQUE,
         UNIQUE(user_id, course_id)
       );
     `);

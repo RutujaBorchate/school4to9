@@ -24,7 +24,7 @@ export async function GET() {
           (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id AND status = 'approved') as enrolled_count
         FROM courses c
         LEFT JOIN users u ON c.teacher_id = u.id
-        WHERE c.status = 'approved' AND c.class = ${String(studentClass)}
+        WHERE c.status = 'approved' AND (CAST(c.class AS TEXT) = ${String(studentClass)} OR CAST(c.class AS TEXT) = ${'Class ' + studentClass} OR CAST(c.class_group AS TEXT) = ${String(studentClass)} OR CAST(c.class_group AS TEXT) = ${'Class ' + studentClass})
         ORDER BY c.created_at DESC
       `
     } else {

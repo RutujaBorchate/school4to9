@@ -142,7 +142,7 @@ export default function StudentCoursesPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Link href={`/student/courses/${course.id}`}>
+                  <Link href={`/dashboard/student/courses/${course.id}`}>
                     <Card className="group h-full cursor-pointer border-0 bg-white/80 shadow-xl backdrop-blur transition-all hover:scale-[1.02] hover:shadow-2xl">
                       <CardContent className="p-0">
                         <div className="relative h-40 overflow-hidden rounded-t-lg bg-gradient-to-br from-violet-500 to-pink-500">

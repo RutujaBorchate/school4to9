@@ -13,11 +13,12 @@ export async function GET(
     }
 
     const { id } = await params
+    const numberedId = Number(id)
 
     // 1. Fetch Quiz Details
     const [quiz] = await sql`
       SELECT id, title, time_limit, passing_score 
-      FROM quizzes WHERE id = ${id}
+      FROM quizzes WHERE id = ${numberedId}
     `
 
     if (!quiz) {
@@ -27,20 +28,18 @@ export async function GET(
     // 2. Check if already completed
     const [response] = await sql`
       SELECT id, score, completed_at FROM quiz_responses 
-      WHERE quiz_id = ${id} AND student_id = ${session.user.id}
+      WHERE quiz_id = ${numberedId} AND student_id = ${session.user.id}
     `
 
     // 3. Fetch Questions & Options
     const questions = await sql`
       SELECT q.id, q.question, q.question_type, q.points, q.order_number
       FROM quiz_questions q
-      WHERE q.quiz_id = ${id}
+      WHERE q.quiz_id = ${numberedId}
       ORDER BY q.order_number ASC
-      LIMIT 10
     `
 
-    const questionIds = questions.map((q: any) => q.id)
-    if (questionIds.length === 0) {
+    if (questions.length === 0) {
       return NextResponse.json({
         ...quiz,
         questions: [],
@@ -53,7 +52,7 @@ export async function GET(
     const options = await sql`
       SELECT id, question_id, option_text, order_number
       FROM quiz_options
-      WHERE question_id IN (${questionIds})
+      WHERE question_id IN (SELECT id FROM quiz_questions WHERE quiz_id = ${numberedId})
       ORDER BY order_number ASC
     `
 

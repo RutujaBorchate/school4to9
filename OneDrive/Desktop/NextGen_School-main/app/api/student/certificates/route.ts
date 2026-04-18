@@ -14,10 +14,15 @@ export async function GET() {
         cert.id,
         cert.issued_at,
         cert.certificate_url,
+        cert.certificate_number,
         c.title as course_title,
-        c.id as course_id
+        c.id as course_id,
+        u.name as student_name,
+        i.name as institution_name
       FROM certificates cert
       JOIN courses c ON cert.course_id = c.id
+      JOIN users u ON cert.student_id = u.id
+      LEFT JOIN institutions i ON u.institution_id = i.id
       WHERE cert.student_id = ${session.user.id}
       ORDER BY cert.issued_at DESC
     `

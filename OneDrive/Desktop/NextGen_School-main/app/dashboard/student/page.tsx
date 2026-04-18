@@ -186,7 +186,7 @@ export default function StudentDashboard() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <Link href={`/student/courses/${course.id}`}>
+                    <Link href={`/dashboard/student/courses/${course.id}`}>
                       <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-100 to-pink-100 p-1 transition-all hover:shadow-lg">
                         <div className="rounded-xl bg-white p-4">
                           <div className="mb-4 flex h-24 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/10 to-pink-500/10">

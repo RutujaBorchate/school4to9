@@ -12,7 +12,7 @@ export async function GET() {
     const quizzes = await sql`
       SELECT 
         q.id, q.title, q.time_limit, q.passing_score, q.created_at,
-        c.title as course_title, c.id as course_id,
+        c.title as course_title, c.id as course_id, c.class,
         (SELECT COUNT(*) FROM quiz_questions WHERE quiz_id = q.id) as question_count,
         (SELECT COUNT(*) FROM quiz_responses WHERE quiz_id = q.id) as submission_count
       FROM quizzes q
@@ -20,6 +20,28 @@ export async function GET() {
       WHERE c.teacher_id = ${session.user.id}
       ORDER BY q.created_at DESC
     `
+
+    // Fetch questions and options for each quiz
+    for (const quiz of quizzes) {
+      const questions = await sql`
+        SELECT id, question, points, order_number
+        FROM quiz_questions
+        WHERE quiz_id = ${quiz.id}
+        ORDER BY order_number ASC
+      `
+
+      for (const q of questions) {
+        const options = await sql`
+          SELECT option_text, is_correct
+          FROM quiz_options
+          WHERE question_id = ${q.id}
+          ORDER BY order_number ASC
+        `
+        q.options = options.map((o: any) => o.option_text)
+      }
+      quiz.questions = questions || []
+    }
+
     return NextResponse.json(quizzes)
   } catch (error) {
     console.error("Teacher quizzes error:", error)
@@ -35,6 +57,7 @@ export async function POST(request: Request) {
     }
 
     const { courseId, title, timeLimit, passingScore, maxAttempts, questions } = await request.json()
+    console.log("Incoming Quiz Request:", { courseId, title, timeLimit, passingScore, maxAttempts, questions });
 
     if (!courseId || !title || !questions?.length) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })

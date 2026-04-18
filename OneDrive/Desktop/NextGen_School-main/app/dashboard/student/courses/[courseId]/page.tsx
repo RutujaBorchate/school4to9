@@ -37,8 +37,24 @@ interface CourseDetails {
   }
 }
 
+function getEmbedUrl(url: string | undefined): string {
+  if (!url) return ""
+  let videoId = ""
+  if (url.includes("youtu.be/")) {
+    videoId = url.split("youtu.be/")[1]?.split("?")[0]
+  } else if (url.includes("watch?v=")) {
+    videoId = url.split("watch?v=")[1]?.split("&")[0]
+  } else if (url.includes("embed/")) {
+    // Already an embed URL
+    return url
+  }
+  return videoId ? `https://www.youtube.com/embed/${videoId}` : url
+}
+
 export default function StudentCourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = use(params)
+  console.log("Course ID:", courseId)
+
   const [course, setCourse] = useState<CourseDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -46,8 +62,10 @@ export default function StudentCourseDetailPage({ params }: { params: Promise<{ 
   const [markingId, setMarkingId] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchCourseDetails()
-  }, [])
+    if (courseId) {
+      fetchCourseDetails()
+    }
+  }, [courseId])
 
   async function fetchCourseDetails() {
     try {
@@ -113,6 +131,14 @@ export default function StudentCourseDetailPage({ params }: { params: Promise<{ 
     )
   }
 
+  if (!courseId) {
+    return <div>Invalid Course</div>
+  }
+
+  if (error === "Course not found") {
+    return <div>Course not found</div>
+  }
+
   if (error) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center p-4 text-center">
@@ -164,7 +190,7 @@ export default function StudentCourseDetailPage({ params }: { params: Promise<{ 
               className="relative aspect-video overflow-hidden rounded-3xl bg-black shadow-2xl ring-1 ring-white/10"
             >
               <iframe
-                src={activeModule?.video_url.replace("watch?v=", "embed/")}
+                src={getEmbedUrl(activeModule?.video_url)}
                 className="h-full w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen

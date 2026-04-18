@@ -15,6 +15,7 @@ export async function GET() {
         c.title, 
         c.description,
         c.status,
+        c.class,
         c.created_at,
         (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) as total_enrolled,
         (SELECT COUNT(*) FROM enrollments WHERE course_id = c.id AND status = 'approved') as approved_enrolled,

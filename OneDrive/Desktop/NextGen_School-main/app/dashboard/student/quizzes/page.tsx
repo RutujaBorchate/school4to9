@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -23,8 +24,18 @@ interface Quiz {
 }
 
 export default function StudentQuizzesPage() {
+  const router = useRouter()
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [loading, setLoading] = useState(true)
+
+  const handleStartQuiz = (quizId: string) => {
+    if (!quizId) {
+      console.error("Quiz ID missing");
+      return;
+    }
+    console.log("Navigating to quiz:", quizId);
+    router.push(`/dashboard/student/quiz/${quizId}`);
+  };
 
   useEffect(() => {
     async function fetchQuizzes() {
@@ -138,8 +149,8 @@ export default function StudentQuizzesPage() {
                         </p>
                       </div>
                     )}
-                    <Link href={`/student/quizzes/${quiz.id}`}>
-                      <Button 
+                    <Button 
+                        onClick={() => handleStartQuiz(quiz.id)}
                         className={`w-full ${
                           quiz.passed
                             ? "bg-gradient-to-r from-emerald-500 to-teal-500"
@@ -166,7 +177,6 @@ export default function StudentQuizzesPage() {
                           </>
                         )}
                       </Button>
-                    </Link>
                   </div>
                 </CardContent>
               </Card>

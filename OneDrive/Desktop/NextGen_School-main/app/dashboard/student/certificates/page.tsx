@@ -1,7 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
+import html2canvas from "html2canvas"
+import jsPDF from "jspdf"
+import { CertificateTemplate } from "@/components/certificate-template"
 import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -21,6 +24,8 @@ interface Certificate {
   course_id: string
   issued_at: string
   certificate_number: string
+  student_name: string
+  institution_name?: string
 }
 
 interface completableCourse {
@@ -34,6 +39,8 @@ export default function StudentCertificatesPage() {
   const [completable, setCompletable] = useState<completableCourse[]>([])
   const [loading, setLoading] = useState(true)
   const [applyingId, setApplyingId] = useState<string | null>(null)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const certRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
 
   useEffect(() => {
     fetchData()
@@ -83,6 +90,74 @@ export default function StudentCertificatesPage() {
       toast.error("An unexpected error occurred.")
     } finally {
       setApplyingId(null)
+    }
+  }
+
+  async function handleDownloadPDF(cert: Certificate) {
+    console.log("Certificate Data:", cert)
+    console.log("Institution Name:", cert.institution_name)
+    
+    const element = certRefs.current[cert.id]
+    if (!element) {
+      console.error("Certificate element not found")
+      toast.error("Template not ready")
+      return
+    }
+
+    setDownloadingId(cert.id)
+    try {
+      // Small delay to ensure the off-screen template is fully rendered
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        onclone: (clonedDoc) => {
+          // Prevent html2canvas from parsing global stylesheets that contain oklch
+          const head = clonedDoc.getElementsByTagName("head")[0];
+          if (head) {
+            const styles = head.getElementsByTagName("style");
+            const links = head.getElementsByTagName("link");
+            
+            // Remove all style tags
+            while (styles.length > 0) {
+              styles[0].parentNode?.removeChild(styles[0]);
+            }
+            
+            // Remove all stylesheet links
+            for (let i = links.length - 1; i >= 0; i--) {
+              if (links[i].rel === "stylesheet") {
+                links[i].parentNode?.removeChild(links[i]);
+              }
+            }
+          }
+
+          // Force all elements in the clone to avoid any inherited oklch vars
+          const elements = clonedDoc.getElementsByTagName("*");
+          for (let i = 0; i < elements.length; i++) {
+            const el = elements[i] as HTMLElement;
+            if (el.style) {
+              el.style.borderColor = "#c084fc";
+              el.style.outlineColor = "transparent";
+              el.style.color = el.style.color || "#1f2937";
+            }
+          }
+        }
+      })
+
+      const imgData = canvas.toDataURL("image/png")
+      const pdf = new jsPDF("landscape", "mm", "a4")
+      
+      pdf.addImage(imgData, "PNG", 0, 0, 297, 210)
+      pdf.save(`Certificate_${cert.course_title.replace(/\s+/g, "_")}.pdf`)
+      
+      toast.success("Certificate downloaded!")
+    } catch (err) {
+      console.error(err)
+      toast.error("Failed to generate PDF")
+    } finally {
+      setDownloadingId(null)
     }
   }
 
@@ -201,9 +276,14 @@ export default function StudentCertificatesPage() {
                            </Link>
                         </Button>
                         <div className="flex gap-2">
-                           <Button variant="outline" className="flex-1 rounded-xl">
-                              <Download className="mr-2 h-4 w-4" /> PDF
-                           </Button>
+                           <Button 
+                              variant="outline" 
+                              className="flex-1 rounded-xl"
+                              onClick={() => handleDownloadPDF(cert)}
+                              disabled={downloadingId === cert.id}
+                            >
+                               {downloadingId === cert.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />} PDF
+                            </Button>
                            <Button variant="outline" className="flex-1 rounded-xl">
                               <Share2 className="mr-2 h-4 w-4" /> Share
                            </Button>
@@ -228,6 +308,21 @@ export default function StudentCertificatesPage() {
           </div>
         )}
       </section>
+
+      {/* Hidden Certificate Templates for PDF Generation */}
+      {certificates.map((cert) => (
+        <CertificateTemplate
+          key={cert.id}
+          ref={(el) => {
+            certRefs.current[cert.id] = el
+          }}
+          studentName={cert.student_name}
+          courseTitle={cert.course_title}
+          issuedAt={cert.issued_at}
+          certificateNumber={cert.certificate_number}
+          institutionName={cert.institution_name}
+        />
+      ))}
     </div>
   )
 }
